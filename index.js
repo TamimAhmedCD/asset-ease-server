@@ -24,12 +24,38 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+    const hrAccountCollection = client.db("AssetEase").collection("hr_account");
+
+    app.get("/hr-account/:email",  async (req, res) => {
+      const email = req.params.email
+      const query = {email: email}
+      const result = await hrAccountCollection.findOne(query)
+      res.send(result)
+    });
+
+    app.get("/users",  async (req, res) => {
+      const result = await hrAccountCollection.find().toArray()
+      res.send(result)
+    });
+
+    app.post('/hr-account', async(req, res) => {
+      const account = req.body;
+      const query = { email: account.email };
+      const existingAccount = await hrAccountCollection.findOne(query)
+      if(existingAccount) {
+        return res.send({message: 'user already exist', insertedId: null})
+      }
+      const result = await hrAccountCollection.insertOne(account)
+      res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
