@@ -1,13 +1,12 @@
-const express = require('express')
-const cors = require('cors')
-const app = express()
-require('dotenv').config()
-const port = process.env.PORT || 5000
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const express = require("express");
+const cors = require("cors");
+const app = express();
+require("dotenv").config();
+const port = process.env.PORT || 5000;
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
-app.use(cors())
-app.use(express.json())
-
+app.use(cors());
+app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.k9pcb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -17,7 +16,7 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
@@ -26,33 +25,79 @@ async function run() {
     await client.connect();
 
     const hrAccountCollection = client.db("AssetEase").collection("hr_account");
+    const employeeAccountCollection = client
+      .db("AssetEase")
+      .collection("employee_account");
 
-    app.get("/hr-account/:email",  async (req, res) => {
-      const email = req.params.email
-      const query = {email: email}
-      const result = await hrAccountCollection.findOne(query)
-      res.send(result)
+    app.get("/hr-account/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await hrAccountCollection.findOne(query);
+      res.send(result);
     });
 
-    app.get("/users",  async (req, res) => {
-      const result = await hrAccountCollection.find().toArray()
-      res.send(result)
+    app.get("/user/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const user =
+        (await hrAccountCollection.findOne({ _id: new ObjectId(id) })) ||
+        (await employeeAccountCollection.findOne({ _id: new ObjectId(id) }));
+
+      if (user) {
+        res.json({ role: user.role });
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
     });
 
-    app.post('/hr-account', async(req, res) => {
+    app.get('/user', async (req, res) => {
+      try {
+        // Fetch data from both collections in parallel
+        const [hrData, employeeData] = await Promise.all([
+          hrAccountCollection.find().toArray(),
+          employeeAccountCollection.find().toArray()
+        ]);
+    
+        // Combine the data from both collections
+        const result = {
+          hr: hrData,
+          employees: employeeData
+        };
+    
+        res.send(result); // Send the combined data
+      } catch (error) {
+        console.error('Error fetching HR and Employee data:', error);
+        res.status(500).send({ message: 'Failed to fetch data' });
+      }
+    });
+    
+
+    app.post("/hr-account", async (req, res) => {
       const account = req.body;
       const query = { email: account.email };
-      const existingAccount = await hrAccountCollection.findOne(query)
-      if(existingAccount) {
-        return res.send({message: 'user already exist', insertedId: null})
+      const existingAccount = await hrAccountCollection.findOne(query);
+      if (existingAccount) {
+        return res.send({ message: "user already exist", insertedId: null });
       }
-      const result = await hrAccountCollection.insertOne(account)
-      res.send(result)
-    })
+      const result = await hrAccountCollection.insertOne(account);
+      res.send(result);
+    });
+    app.post("/employee-account", async (req, res) => {
+      const account = req.body;
+      const query = { email: account.email };
+      const existingAccount = await employeeAccountCollection.findOne(query);
+      if (existingAccount) {
+        return res.send({ message: "user already exist", insertedId: null });
+      }
+      const result = await employeeAccountCollection.insertOne(account);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -60,11 +105,10 @@ async function run() {
 }
 run().catch(console.dir);
 
-
-app.get('/', (req, res) => {
-    res.send('Mange your asset with ease')
-})
+app.get("/", (req, res) => {
+  res.send("Mange your asset with ease");
+});
 
 app.listen(port, () => {
-    console.log(`Manage your asset using: ${port}`);
-})
+  console.log(`Manage your asset using: ${port}`);
+});
