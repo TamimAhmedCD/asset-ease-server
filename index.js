@@ -36,12 +36,12 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/user/:id", async (req, res) => {
-      const id = req.params.id;
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
 
       const user =
-        (await hrAccountCollection.findOne({ _id: new ObjectId(id) })) ||
-        (await employeeAccountCollection.findOne({ _id: new ObjectId(id) }));
+        (await hrAccountCollection.findOne({ email: email })) ||
+        (await employeeAccountCollection.findOne({ email: email }));
 
       if (user) {
         res.json({ role: user.role });
@@ -50,27 +50,26 @@ async function run() {
       }
     });
 
-    app.get('/user', async (req, res) => {
+    app.get("/user", async (req, res) => {
       try {
         // Fetch data from both collections in parallel
         const [hrData, employeeData] = await Promise.all([
           hrAccountCollection.find().toArray(),
-          employeeAccountCollection.find().toArray()
+          employeeAccountCollection.find().toArray(),
         ]);
-    
+
         // Combine the data from both collections
         const result = {
           hr: hrData,
-          employees: employeeData
+          employees: employeeData,
         };
-    
+
         res.send(result); // Send the combined data
       } catch (error) {
-        console.error('Error fetching HR and Employee data:', error);
-        res.status(500).send({ message: 'Failed to fetch data' });
+        console.error("Error fetching HR and Employee data:", error);
+        res.status(500).send({ message: "Failed to fetch data" });
       }
     });
-    
 
     app.post("/hr-account", async (req, res) => {
       const account = req.body;
@@ -82,6 +81,7 @@ async function run() {
       const result = await hrAccountCollection.insertOne(account);
       res.send(result);
     });
+    
     app.post("/employee-account", async (req, res) => {
       const account = req.body;
       const query = { email: account.email };
