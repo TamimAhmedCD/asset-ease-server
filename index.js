@@ -36,6 +36,13 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/employee-account/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await employeeAccountCollection.findOne(query);
+      res.send(result);
+    });
+
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
 
