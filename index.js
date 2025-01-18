@@ -77,6 +77,17 @@ async function run() {
       res.send(employees);
     });
 
+    // Get Employee data using hr_email
+    app.get("/employee-accounts/:email", async (req, res) => {
+      const email = req.params.email
+      // Query to fetch only employees with employee_status: false
+      const query = { hr_email: email };
+      // Fetch data from the database
+      const employees = await employeeAccountCollection.find(query).toArray();
+      // Send the result
+      res.send(employees);
+    });
+
     // Post Employee data
     app.post("/employee-account", async (req, res) => {
       const account = req.body;
