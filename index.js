@@ -69,16 +69,13 @@ async function run() {
 
     // Get Employee data using employee_status
     app.get("/employee-account", async (req, res) => {
-        // Query to fetch only employees with employee_status: false
-        const query = {employee_status: false}
-        // Fetch data from the database
-        const employees = await employeeAccountCollection.find(query).toArray();
-        
-        // Send the result
-        res.send(employees);
-
+      // Query to fetch only employees with employee_status: false
+      const query = { employee_status: false };
+      // Fetch data from the database
+      const employees = await employeeAccountCollection.find(query).toArray();
+      // Send the result
+      res.send(employees);
     });
-    
 
     // Post Employee data
     app.post("/employee-account", async (req, res) => {
@@ -89,6 +86,21 @@ async function run() {
         return res.send({ message: "user already exist", insertedId: null });
       }
       const result = await employeeAccountCollection.insertOne(account);
+      res.send(result);
+    });
+
+    // Patch Employee data
+    app.patch("/employee-account/:id", async (req, res) => {
+      const id = req.params.id; // Extract the ID from the URL
+      const updateData = req.body; // Data to update
+
+      // Convert the string ID to a MongoDB ObjectId
+      const filter = {_id: new ObjectId(id)};
+
+
+      // Perform the update
+      const result = await employeeAccountCollection.updateOne({_id: new ObjectId(id)}, {$set: updateData});
+
       res.send(result);
     });
 
