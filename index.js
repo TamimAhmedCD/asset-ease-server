@@ -24,11 +24,20 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    //! HR Collection
     const hrAccountCollection = client.db("AssetEase").collection("hr_account");
+
+    //! Employee Collection
     const employeeAccountCollection = client
       .db("AssetEase")
       .collection("employee_account");
 
+    //! Assets Collection
+    const assetsCollection = client.db("AssetEase").collection("assets");
+
+    //! HR Account Related API
+
+    // Get HR data using HR email
     app.get("/hr-account/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -36,6 +45,21 @@ async function run() {
       res.send(result);
     });
 
+    // Post HR data
+    app.post("/hr-account", async (req, res) => {
+      const account = req.body;
+      const query = { email: account.email };
+      const existingAccount = await hrAccountCollection.findOne(query);
+      if (existingAccount) {
+        return res.send({ message: "user already exist", insertedId: null });
+      }
+      const result = await hrAccountCollection.insertOne(account);
+      res.send(result);
+    });
+
+    //! Employee Account Related API
+
+    // Get Employee data using Employee email
     app.get("/employee-account/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
@@ -43,6 +67,19 @@ async function run() {
       res.send(result);
     });
 
+    // Post Employee data
+    app.post("/employee-account", async (req, res) => {
+      const account = req.body;
+      const query = { email: account.email };
+      const existingAccount = await employeeAccountCollection.findOne(query);
+      if (existingAccount) {
+        return res.send({ message: "user already exist", insertedId: null });
+      }
+      const result = await employeeAccountCollection.insertOne(account);
+      res.send(result);
+    });
+
+    //! Get all account by email and find only role
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
 
@@ -57,6 +94,7 @@ async function run() {
       }
     });
 
+    //! Get all Users account
     app.get("/user", async (req, res) => {
       try {
         // Fetch data from both collections in parallel
@@ -78,27 +116,14 @@ async function run() {
       }
     });
 
-    app.post("/hr-account", async (req, res) => {
-      const account = req.body;
-      const query = { email: account.email };
-      const existingAccount = await hrAccountCollection.findOne(query);
-      if (existingAccount) {
-        return res.send({ message: "user already exist", insertedId: null });
-      }
-      const result = await hrAccountCollection.insertOne(account);
-      res.send(result);
-    });
-    
-    app.post("/employee-account", async (req, res) => {
-      const account = req.body;
-      const query = { email: account.email };
-      const existingAccount = await employeeAccountCollection.findOne(query);
-      if (existingAccount) {
-        return res.send({ message: "user already exist", insertedId: null });
-      }
-      const result = await employeeAccountCollection.insertOne(account);
-      res.send(result);
-    });
+    //! Assets Related APi
+
+    // Post Assets data
+    app.post('/assets', async(req, res) => {
+      const asset = req.body;
+      const result = await assetsCollection.insertOne(asset)
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
