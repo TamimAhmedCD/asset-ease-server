@@ -67,6 +67,19 @@ async function run() {
       res.send(result);
     });
 
+    // Get Employee data using employee_status
+    app.get("/employee-account", async (req, res) => {
+        // Query to fetch only employees with employee_status: false
+        const query = {employee_status: false}
+        // Fetch data from the database
+        const employees = await employeeAccountCollection.find(query).toArray();
+        
+        // Send the result
+        res.send(employees);
+
+    });
+    
+
     // Post Employee data
     app.post("/employee-account", async (req, res) => {
       const account = req.body;
@@ -119,17 +132,17 @@ async function run() {
     //! Assets Related APi
 
     // Post Assets data
-    app.post('/assets', async(req, res) => {
+    app.post("/assets", async (req, res) => {
       const asset = req.body;
-      const result = await assetsCollection.insertOne(asset)
-      res.send(result)
-    })
+      const result = await assetsCollection.insertOne(asset);
+      res.send(result);
+    });
 
     // Get Assets data
-    app.get('/assets', async(req, res) => {
-      const result = await assetsCollection.find().toArray()
-      res.send(result)
-    })
+    app.get("/assets", async (req, res) => {
+      const result = await assetsCollection.find().toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
