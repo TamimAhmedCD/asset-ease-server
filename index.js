@@ -35,6 +35,9 @@ async function run() {
     //! Assets Collection
     const assetsCollection = client.db("AssetEase").collection("assets");
 
+    //! Requested Assets Collection
+    const requestedAssetsCollection = client.db("AssetEase").collection("requested_Assets");
+
     //! HR Account Related API
 
     // Get HR data using HR email
@@ -166,6 +169,31 @@ async function run() {
       const result = await assetsCollection.find().toArray();
       res.send(result);
     });
+
+    // Get Assets using _id data
+    app.get("/assets/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await assetsCollection.findOne(query);
+      res.send(result);
+    });
+
+    //! Requested Asset API 
+
+    // Post Requested Asset
+    app.post('/requested-asset', async (req, res) => {
+      const asset = req.body;
+      const result = await requestedAssetsCollection.insertOne(asset)
+      res.send(result)
+    })
+
+    // Get Requested Asset using email
+    app.get('/requested-asset', async(req, res) => {
+      const email = req.query.email
+      const query = {requester_email: email};
+      const result = await requestedAssetsCollection.find(query).toArray()
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
