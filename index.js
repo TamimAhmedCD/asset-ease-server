@@ -239,6 +239,20 @@ async function run() {
       res.send(result);
     });
 
+    // Get Requested Asset
+    app.get("/requested-assets", async (req, res) => {
+      const result = await requestedAssetsCollection.find().toArray();
+      for (const request of result) {
+        const query1 = { _id: new ObjectId(request.asset_id) };
+        const asset = await assetsCollection.findOne(query1);
+        if (asset) {
+          request.asset_name = asset.product_name;
+          request.asset_type = asset.product_type;
+        }
+      }
+      res.send(result);
+    });
+
     // Delete Requested Asset and increase product_quantity
     app.delete("/requested-asset/:id", async (req, res) => {
       const id = req.params.id;
