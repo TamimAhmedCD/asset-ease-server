@@ -226,6 +226,16 @@ async function run() {
       const email = req.query.email;
       const query = { requester_email: email };
       const result = await requestedAssetsCollection.find(query).toArray();
+
+      for (const request of result) {
+        const query1 = { _id: new ObjectId(request.asset_id) };
+        const asset = await assetsCollection.findOne(query1);
+        if (asset) {
+          request.asset_name = asset.product_name;
+          request.asset_type = asset.product_type;
+        }
+      }
+
       res.send(result);
     });
 
