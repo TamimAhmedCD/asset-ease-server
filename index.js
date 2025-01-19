@@ -110,9 +110,6 @@ async function run() {
       const id = req.params.id; // Extract the ID from the URL
       const updateData = req.body; // Data to update
 
-      // Convert the string ID to a MongoDB ObjectId
-      const filter = { _id: new ObjectId(id) };
-
       // Perform the update
       const result = await employeeAccountCollection.updateOne(
         { _id: new ObjectId(id) },
@@ -284,6 +281,20 @@ async function run() {
 
       // Delete the requested asset
       const result = await requestedAssetsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Update Requested Asset
+    app.patch("/requested-asset/:id", async (req, res) => {
+      const id = req.params.id;
+      const updateStatus = req.body;
+
+      // Perform the update
+      const result = await requestedAssetsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateStatus }
+      );
+
       res.send(result);
     });
 
