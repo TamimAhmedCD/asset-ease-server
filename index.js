@@ -36,7 +36,9 @@ async function run() {
     const assetsCollection = client.db("AssetEase").collection("assets");
 
     //! Requested Assets Collection
-    const requestedAssetsCollection = client.db("AssetEase").collection("requested_Assets");
+    const requestedAssetsCollection = client
+      .db("AssetEase")
+      .collection("requested_Assets");
 
     //! HR Account Related API
 
@@ -82,7 +84,7 @@ async function run() {
 
     // Get Employee data using hr_email
     app.get("/employee-accounts/:email", async (req, res) => {
-      const email = req.params.email
+      const email = req.params.email;
       // Query to fetch only employees with employee_status: false
       const query = { hr_email: email };
       // Fetch data from the database
@@ -109,11 +111,13 @@ async function run() {
       const updateData = req.body; // Data to update
 
       // Convert the string ID to a MongoDB ObjectId
-      const filter = {_id: new ObjectId(id)};
-
+      const filter = { _id: new ObjectId(id) };
 
       // Perform the update
-      const result = await employeeAccountCollection.updateOne({_id: new ObjectId(id)}, {$set: updateData});
+      const result = await employeeAccountCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateData }
+      );
 
       res.send(result);
     });
@@ -173,48 +177,57 @@ async function run() {
     // Get Assets using _id data
     app.get("/assets/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) };
       const result = await assetsCollection.findOne(query);
       res.send(result);
     });
 
-    //! Requested Asset API 
+    //! Requested Asset API
 
     // Post Requested Asset
-    app.post('/requested-asset', async (req, res) => {
+    app.post("/requested-asset", async (req, res) => {
       const asset = req.body;
-      const result = await requestedAssetsCollection.insertOne(asset)
+      const result = await requestedAssetsCollection.insertOne(asset);
 
-      const id = asset.asset_id
-      const query = {_id: new ObjectId(id)}
-      const assets = await assetsCollection.findOne(query)
-      
+      const id = asset.asset_id;
+      const query = { _id: new ObjectId(id) };
+      const assets = await assetsCollection.findOne(query);
+
       let count = 0;
-      if(assets.request_count) {
-        count = assets.request_count + 1
+      if (assets.request_count) {
+        count = assets.request_count + 1;
       } else {
-        count = 1
+        count = 1;
       }
 
-      const filter = {_id: new ObjectId(id)};
-      const updatedDoc = {
-        $set: {
-          request_count: count
-        }
+      if (assets.product_quantity) {
+        let quantity = Number(assets.product_quantity);
+        const updatedQuantity = quantity - 1;
+
+        const filter = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            request_count: count,
+            product_quantity: updatedQuantity, // Update the quantity here
+          },
+        };
+
+        const updateResult = await assetsCollection.updateOne(
+          filter,
+          updatedDoc
+        );
       }
 
-      const updateResult = await assetsCollection.updateOne(filter, updatedDoc)
-
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // Get Requested Asset using email
-    app.get('/requested-asset', async(req, res) => {
-      const email = req.query.email
-      const query = {requester_email: email};
-      const result = await requestedAssetsCollection.find(query).toArray()
-      res.send(result)
-    })
+    app.get("/requested-asset", async (req, res) => {
+      const email = req.query.email;
+      const query = { requester_email: email };
+      const result = await requestedAssetsCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
