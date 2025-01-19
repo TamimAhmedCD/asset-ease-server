@@ -184,6 +184,27 @@ async function run() {
     app.post('/requested-asset', async (req, res) => {
       const asset = req.body;
       const result = await requestedAssetsCollection.insertOne(asset)
+
+      const id = asset.asset_id
+      const query = {_id: new ObjectId(id)}
+      const assets = await assetsCollection.findOne(query)
+      
+      let count = 0;
+      if(assets.request_count) {
+        count = assets.request_count + 1
+      } else {
+        count = 1
+      }
+
+      const filter = {_id: new ObjectId(id)};
+      const updatedDoc = {
+        $set: {
+          request_count: count
+        }
+      }
+
+      const updateResult = await assetsCollection.updateOne(filter, updatedDoc)
+
       res.send(result)
     })
 
