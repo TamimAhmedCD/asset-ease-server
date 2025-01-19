@@ -239,6 +239,40 @@ async function run() {
       res.send(result);
     });
 
+    // Delete Requested Asset and increase product_quantity
+    app.delete("/requested-asset/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+
+      // Find the requested asset to get the asset_id
+      const requestedAsset = await requestedAssetsCollection.findOne(query);
+      const assetId = requestedAsset ? requestedAsset.asset_id : null;
+
+      if (assetId) {
+        const assetQuery = { _id: new ObjectId(assetId) };
+        const asset = await assetsCollection.findOne(assetQuery);
+
+        if (asset) {
+          // Increase the product_quantity
+          const updatedQuantity = asset.product_quantity + 1;
+
+          const filter = { _id: new ObjectId(assetId) };
+          const updatedDoc = {
+            $set: {
+              product_quantity: updatedQuantity, // Increase the quantity here
+            },
+          };
+
+          // Update asset collection to increase quantity
+          await assetsCollection.updateOne(filter, updatedDoc);
+        }
+      }
+
+      // Delete the requested asset
+      const result = await requestedAssetsCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
