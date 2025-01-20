@@ -165,9 +165,9 @@ async function run() {
       res.send(result);
     });
 
-    // Get Assets data with search functionality
+    // Get Assets data with search functionality and sort by product_quantity
     app.get("/assets", async (req, res) => {
-      const { search } = req.query; // Get the search query from the request
+      const { search, sort } = req.query; // Get the search query and sort option from the request
 
       let filter = {}; // Default filter is empty, meaning all assets are fetched
 
@@ -176,8 +176,19 @@ async function run() {
         filter = { product_name: { $regex: search, $options: "i" } }; // 'i' for case-insensitive search
       }
 
+      // Define the sort option based on the query parameter (if provided)
+      let sortOption = {};
+      if (sort === "asc") {
+        sortOption = { product_quantity: 1 }; // Ascending order
+      } else if (sort === "desc") {
+        sortOption = { product_quantity: -1 }; // Descending order
+      }
+
       try {
-        const result = await assetsCollection.find(filter).toArray();
+        const result = await assetsCollection
+          .find(filter) // Filter by search term (if provided)
+          .sort(sortOption) // Sort by product_quantity (if sort option is provided)
+          .toArray();
         res.send(result);
       } catch (error) {
         res
