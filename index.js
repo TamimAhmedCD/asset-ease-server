@@ -238,17 +238,35 @@ async function run() {
 
     // Get Requested Asset
     app.get("/requested-assets", async (req, res) => {
-      const result = await requestedAssetsCollection.find().toArray();
-      for (const request of result) {
-        const query1 = { _id: new ObjectId(request.asset_id) };
-        const asset = await assetsCollection.findOne(query1);
-        if (asset) {
-          request.asset_name = asset.product_name;
-          request.asset_type = asset.product_type;
-        }
+      const { requester_email, requester_name } = req.query;
+    
+      // Build the search query based on which parameter is provided
+      let searchQuery = {};
+      if (requester_email) {
+        searchQuery.requester_email = { $regex: requester_email, $options: "i" }; // Case-insensitive match
+      } else if (requester_name) {
+        searchQuery.requester_name = { $regex: requester_name, $options: "i" }; // Case-insensitive match
       }
-      res.send(result);
-    });
+    
+      try {
+        // Get the requested assets based on the search query
+        const result = await requestedAssetsCollection.find(searchQuery).toArray();
+        
+        for (const request of result) {
+          const query1 = { _id: new ObjectId(request.asset_id) };
+          const asset = await assetsCollection.findOne(query1);
+          if (asset) {
+            request.asset_name = asset.product_name;
+            request.asset_type = asset.product_type;
+          }
+        }
+        
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching requested assets:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });       
 
     // Delete Requested Asset and increase product_quantity
     app.delete("/requested-asset/:id", async (req, res) => {
