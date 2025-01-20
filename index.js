@@ -165,10 +165,25 @@ async function run() {
       res.send(result);
     });
 
-    // Get Assets data
+    // Get Assets data with search functionality
     app.get("/assets", async (req, res) => {
-      const result = await assetsCollection.find().toArray();
-      res.send(result);
+      const { search } = req.query; // Get the search query from the request
+
+      let filter = {}; // Default filter is empty, meaning all assets are fetched
+
+      if (search) {
+        // If a search query is provided, filter by asset name
+        filter = { product_name: { $regex: search, $options: "i" } }; // 'i' for case-insensitive search
+      }
+
+      try {
+        const result = await assetsCollection.find(filter).toArray();
+        res.send(result);
+      } catch (error) {
+        res
+          .status(500)
+          .send({ message: "Failed to fetch assets", error: error.message });
+      }
     });
 
     // Get Assets using _id data
@@ -239,19 +254,24 @@ async function run() {
     // Get Requested Asset
     app.get("/requested-assets", async (req, res) => {
       const { requester_email, requester_name } = req.query;
-    
+
       // Build the search query based on which parameter is provided
       let searchQuery = {};
       if (requester_email) {
-        searchQuery.requester_email = { $regex: requester_email, $options: "i" }; // Case-insensitive match
+        searchQuery.requester_email = {
+          $regex: requester_email,
+          $options: "i",
+        }; // Case-insensitive match
       } else if (requester_name) {
         searchQuery.requester_name = { $regex: requester_name, $options: "i" }; // Case-insensitive match
       }
-    
+
       try {
         // Get the requested assets based on the search query
-        const result = await requestedAssetsCollection.find(searchQuery).toArray();
-        
+        const result = await requestedAssetsCollection
+          .find(searchQuery)
+          .toArray();
+
         for (const request of result) {
           const query1 = { _id: new ObjectId(request.asset_id) };
           const asset = await assetsCollection.findOne(query1);
@@ -260,13 +280,13 @@ async function run() {
             request.asset_type = asset.product_type;
           }
         }
-        
+
         res.send(result);
       } catch (error) {
         console.error("Error fetching requested assets:", error);
         res.status(500).send("Internal Server Error");
       }
-    });       
+    });
 
     // Delete Requested Asset and increase product_quantity
     app.delete("/requested-asset/:id", async (req, res) => {
