@@ -249,22 +249,43 @@ async function run() {
       res.send(result);
     });
 
-    // Get Requested Asset using email
+    // get requested asset using email, search function
     app.get("/requested-asset", async (req, res) => {
       const email = req.query.email;
-      const query = { requester_email: email };
-      const result = await requestedAssetsCollection.find(query).toArray();
+      const searchQuery = req.query.search || ""; // Search query parameter for asset name
+      let query = { requester_email: email };
 
-      for (const request of result) {
-        const query1 = { _id: new ObjectId(request.asset_id) };
-        const asset = await assetsCollection.findOne(query1);
-        if (asset) {
-          request.asset_name = asset.product_name;
-          request.asset_type = asset.product_type;
-        }
+      try {
+        // Fetch requested assets based on email
+        const result = await requestedAssetsCollection.find(query).toArray();
+
+        // Fetch asset details and join them with requested assets
+        const assetPromises = result.map(async (request) => {
+          const assetQuery = { _id: new ObjectId(request.asset_id) }; // Assuming asset_id is an ObjectId
+          const asset = await assetsCollection.findOne(assetQuery);
+          if (asset) {
+            request.asset_name = asset.product_name; // Add product_name from assets collection
+            request.asset_type = asset.product_type; // Add product_type from assets collection
+          }
+          return request;
+        });
+
+        const assetsWithDetails = await Promise.all(assetPromises);
+
+        // If a search query is provided, filter by asset_name (case-insensitive)
+        const filteredResults = searchQuery
+          ? assetsWithDetails.filter((request) =>
+              request.asset_name
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase())
+            )
+          : assetsWithDetails;
+
+        res.send(filteredResults); // Return the filtered results
+      } catch (error) {
+        console.error("Error fetching requested assets:", error);
+        res.status(500).send({ message: "Internal Server Error" });
       }
-
-      res.send(result);
     });
 
     // Get Requested Asset
@@ -303,7 +324,7 @@ async function run() {
         res.status(500).send("Internal Server Error");
       }
     });
-    
+
     // Update Requested Asset
     app.patch("/requested-asset/:id", async (req, res) => {
       const id = req.params.id;
