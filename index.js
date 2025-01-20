@@ -249,12 +249,11 @@ async function run() {
       res.send(result);
     });
 
-    // Get requested asset using email, search, status, and asset_type filters
+    // Get requested asset using email, search, and status filter
     app.get("/requested-asset", async (req, res) => {
       const email = req.query.email;
       const searchQuery = req.query.search || ""; // Search query parameter for asset name
       const status = req.query.status; // Status filter parameter
-      const assetType = req.query.asset_type; // Asset type filter parameter
       let query = { requester_email: email };
 
       try {
@@ -287,15 +286,6 @@ async function run() {
         if (status) {
           filteredResults = filteredResults.filter(
             (request) => request.status.toLowerCase() === status.toLowerCase()
-          );
-        }
-
-        // Further filter by asset_type if provided
-        if (assetType) {
-          filteredResults = filteredResults.filter(
-            (request) =>
-              request.asset_type &&
-              request.asset_type.toLowerCase() === assetType.toLowerCase()
           );
         }
 
@@ -356,6 +346,40 @@ async function run() {
 
       res.send(result);
     });
+
+    // Delete Requested Asset and increase product_quantity
+    // app.delete("/requested-asset/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) };
+
+    //   // Find the requested asset to get the asset_id
+    //   const requestedAsset = await requestedAssetsCollection.findOne(query);
+    //   const assetId = requestedAsset ? requestedAsset.asset_id : null;
+
+    //   if (assetId) {
+    //     const assetQuery = { _id: new ObjectId(assetId) };
+    //     const asset = await assetsCollection.findOne(assetQuery);
+
+    //     if (asset) {
+    //       // Increase the product_quantity
+    //       const updatedQuantity = asset.product_quantity + 1;
+
+    //       const filter = { _id: new ObjectId(assetId) };
+    //       const updatedDoc = {
+    //         $set: {
+    //           product_quantity: updatedQuantity, // Increase the quantity here
+    //         },
+    //       };
+
+    //       // Update asset collection to increase quantity
+    //       await assetsCollection.updateOne(filter, updatedDoc);
+    //     }
+    //   }
+
+    //   // Delete the requested asset
+    //   const result = await requestedAssetsCollection.deleteOne(query);
+    //   res.send(result);
+    // });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
