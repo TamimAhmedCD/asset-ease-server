@@ -249,10 +249,11 @@ async function run() {
       res.send(result);
     });
 
-    // get requested asset using email, search function
+    // Get requested asset using email, search, and status filter
     app.get("/requested-asset", async (req, res) => {
       const email = req.query.email;
       const searchQuery = req.query.search || ""; // Search query parameter for asset name
+      const status = req.query.status; // Status filter parameter
       let query = { requester_email: email };
 
       try {
@@ -272,14 +273,21 @@ async function run() {
 
         const assetsWithDetails = await Promise.all(assetPromises);
 
-        // If a search query is provided, filter by asset_name (case-insensitive)
-        const filteredResults = searchQuery
+        // Filter results by asset_name if search query is provided
+        let filteredResults = searchQuery
           ? assetsWithDetails.filter((request) =>
               request.asset_name
                 .toLowerCase()
                 .includes(searchQuery.toLowerCase())
             )
           : assetsWithDetails;
+
+        // Further filter by status if provided
+        if (status) {
+          filteredResults = filteredResults.filter(
+            (request) => request.status.toLowerCase() === status.toLowerCase()
+          );
+        }
 
         res.send(filteredResults); // Return the filtered results
       } catch (error) {
