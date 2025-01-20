@@ -165,15 +165,20 @@ async function run() {
       res.send(result);
     });
 
-    // Get Assets data with search functionality and sort by product_quantity
+    // Get Assets data with search functionality, sort by product_quantity, and filter by product_type
     app.get("/assets", async (req, res) => {
-      const { search, sort } = req.query; // Get the search query and sort option from the request
+      const { search, sort, product_type } = req.query; // Get the search query, sort option, and product_type filter from the request
 
       let filter = {}; // Default filter is empty, meaning all assets are fetched
 
+      // If a search query is provided, filter by asset name
       if (search) {
-        // If a search query is provided, filter by asset name
-        filter = { product_name: { $regex: search, $options: "i" } }; // 'i' for case-insensitive search
+        filter.product_name = { $regex: search, $options: "i" }; // 'i' for case-insensitive search
+      }
+
+      // If a product_type filter is provided, add it to the filter
+      if (product_type && product_type !== "all") {
+        filter.product_type = product_type; // Filter by the specific product_type (Returnable or Non-returnable)
       }
 
       // Define the sort option based on the query parameter (if provided)
@@ -186,8 +191,8 @@ async function run() {
 
       try {
         const result = await assetsCollection
-          .find(filter) // Filter by search term (if provided)
-          .sort(sortOption) // Sort by product_quantity (if sort option is provided)
+          .find(filter) // Apply the filter (search query and product_type filter)
+          .sort(sortOption) // Apply sorting by product_quantity
           .toArray();
         res.send(result);
       } catch (error) {
