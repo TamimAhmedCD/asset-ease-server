@@ -165,6 +165,17 @@ async function run() {
       res.send(result);
     });
 
+    // Update Asset
+    app.patch("/assets/:id", async (req, res) => {
+      const asset = req.body;
+      const id = req.params.id;
+      const result = await assetsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: asset }
+      );
+      res.send(result);
+    });
+
     // Get Assets data with search functionality, sort by product_quantity, and filter by product_type
     app.get("/assets", async (req, res) => {
       const { search, sort, product_type } = req.query; // Get the search query, sort option, and product_type filter from the request
