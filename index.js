@@ -179,7 +179,7 @@ async function run() {
     // Delete Asset
     app.delete("/assets/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
+      const query = { _id: new ObjectId(id) };
       const result = await assetsCollection.deleteOne(query);
       res.send(result);
     });
@@ -317,25 +317,37 @@ async function run() {
 
     // Get Requested Asset
     app.get("/requested-assets", async (req, res) => {
+      const email = req.query.email; // HR email
+      if (!email) {
+        return res.status(400).send("HR email is required");
+      }
+
       const { requester_email, requester_name } = req.query;
 
-      // Build the search query based on which parameter is provided
-      let searchQuery = {};
+      // Build the search query with hr_email as the base condition
+      let searchQuery = { hr_email: email };
+
+      // Add additional search filters if provided
       if (requester_email) {
         searchQuery.requester_email = {
           $regex: requester_email,
-          $options: "i",
-        }; // Case-insensitive match
-      } else if (requester_name) {
-        searchQuery.requester_name = { $regex: requester_name, $options: "i" }; // Case-insensitive match
+          $options: "i", // Case-insensitive match
+        };
+      }
+      if (requester_name) {
+        searchQuery.requester_name = {
+          $regex: requester_name,
+          $options: "i", // Case-insensitive match
+        };
       }
 
       try {
-        // Get the requested assets based on the search query
+        // Fetch requested assets based on the search query
         const result = await requestedAssetsCollection
           .find(searchQuery)
           .toArray();
 
+        // Enrich results with asset details
         for (const request of result) {
           const query1 = { _id: new ObjectId(request.asset_id) };
           const asset = await assetsCollection.findOne(query1);
