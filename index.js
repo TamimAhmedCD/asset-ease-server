@@ -111,7 +111,7 @@ async function run() {
       const updateData = req.body; // Data to update
 
       // Perform the update
-      const result = await employeeAccountCollection.updateOne(
+      const result = await employeeAccountCollection.updateMany(
         { _id: new ObjectId(id) },
         { $set: updateData }
       );
