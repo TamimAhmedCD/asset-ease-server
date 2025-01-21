@@ -268,11 +268,12 @@ async function run() {
       res.send(result);
     });
 
-    // Get requested asset using email, search, and status filter
+    // Get requested asset using email, search, status filter, and asset_type filter
     app.get("/requested-asset", async (req, res) => {
       const email = req.query.email;
       const searchQuery = req.query.search || ""; // Search query parameter for asset name
       const status = req.query.status; // Status filter parameter
+      const assetType = req.query.asset_type; // Asset type filter parameter
       let query = { requester_email: email };
 
       try {
@@ -305,6 +306,15 @@ async function run() {
         if (status) {
           filteredResults = filteredResults.filter(
             (request) => request.status.toLowerCase() === status.toLowerCase()
+          );
+        }
+
+        // Further filter by asset_type if provided
+        if (assetType) {
+          filteredResults = filteredResults.filter(
+            (request) =>
+              request.asset_type &&
+              request.asset_type.toLowerCase() === assetType.toLowerCase()
           );
         }
 
