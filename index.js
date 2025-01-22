@@ -331,6 +331,14 @@ async function run() {
       const query = { requester_email: email, status: "Pending" };
 
       const result = await requestedAssetsCollection.find(query).toArray();
+
+      for(const request of result) {
+        query1 = {_id: new ObjectId(request.asset_id)}
+        const asset = await assetsCollection.findOne(query1)
+        if(asset) {
+          request.asset_name = asset.product_name
+        }
+      }
       res.send(result);
     });
 
