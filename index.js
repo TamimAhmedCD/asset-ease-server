@@ -325,6 +325,15 @@ async function run() {
       }
     });
 
+    // Get requested assets data using email and filter data by status: Pending
+    app.get("/requested-asset/pending", async (req, res) => {
+      const email = req.query.email;
+      const query = { requester_email: email, status: "Pending" };
+
+      const result = await requestedAssetsCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // Get Requested Asset
     app.get("/requested-assets", async (req, res) => {
       const email = req.query.email; // HR email
