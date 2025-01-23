@@ -332,47 +332,55 @@ async function run() {
 
       const result = await requestedAssetsCollection.find(query).toArray();
 
-      for(const request of result) {
-        query1 = {_id: new ObjectId(request.asset_id)}
-        const asset = await assetsCollection.findOne(query1)
-        if(asset) {
-          request.asset_name = asset.product_name
+      for (const request of result) {
+        query1 = { _id: new ObjectId(request.asset_id) };
+        const asset = await assetsCollection.findOne(query1);
+        if (asset) {
+          request.asset_name = asset.product_name;
         }
       }
       res.send(result);
     });
 
     // Get request asset use request this month
-    app.get('/requested-asset/monthly', async (req, res) => {
+    app.get("/requested-asset/monthly", async (req, res) => {
       const email = req.query.email;
-    
+
       // Define the start and end of the current month
       const currentDate = new Date();
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString()
-      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1).toISOString()
-    
+      const startOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1
+      ).toISOString();
+      const endOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        1
+      ).toISOString();
+
       // Query to filter by email and request date within the current month
       const query = {
         requester_email: email,
         request_date: { $gte: startOfMonth, $lt: endOfMonth },
       };
-    
+
       // Fetch requests within the date range and sort by request_date (descending)
       const result = await requestedAssetsCollection
         .find(query)
         .sort({ request_date: -1 }) // Sort: most recent first
         .toArray();
-    
+
       // Append asset names to the requests
       for (const request of result) {
         const assetQuery = { _id: new ObjectId(request.asset_id) };
         const asset = await assetsCollection.findOne(assetQuery);
-    
+
         if (asset) {
           request.asset_name = asset.product_name; // Add asset name to the request
         }
       }
-    
+
       // Send the final result
       res.send(result);
     });
@@ -424,6 +432,28 @@ async function run() {
         console.error("Error fetching requested assets:", error);
         res.status(500).send("Internal Server Error");
       }
+    });
+
+    // HR Pending requested asset
+    app.get("/requested-assets/pending", async (req, res) => {
+      const email = req.query.email; // HR email
+      const query = { hr_email: email, status: "Pending" };
+
+      const result = await requestedAssetsCollection
+        .find(query)
+        .limit(5)
+        .toArray();
+
+      // Enrich results with asset details
+      for (const request of result) {
+        const query1 = { _id: new ObjectId(request.asset_id) };
+        const asset = await assetsCollection.findOne(query1);
+        if (asset) {
+          request.asset_name = asset.product_name;
+          request.asset_type = asset.product_type;
+        }
+      }
+      res.send(result);
     });
 
     // Update Requested Asset
