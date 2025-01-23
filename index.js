@@ -221,6 +221,33 @@ async function run() {
       }
     });
 
+    // Get Assets sort by request_count an max 5
+    app.get("/assets/request-count", async (req, res) => {
+      const { limit, sort } = req.query;
+    
+      // Parse limit into a number, default to 5 if not provided
+      const maxItems = limit ? parseInt(limit) : 5;
+    
+      // Determine sorting order, default to descending (-1) on `request_count`
+      const sortOrder = sort === "asc" ? 1 : -1; // Default to "desc"
+    
+      try {
+        // Fetch and sort assets based on request_count
+        const result = await assetsCollection
+          .find()                      // No filter applied
+          .sort({ request_count: sortOrder }) // Sort dynamically by query
+          .limit(maxItems)             // Limit results to `maxItems`
+          .toArray();
+    
+        res.send(result);
+      } catch (error) {
+        // Handle errors gracefully
+        console.error("Error fetching assets:", error);
+        res.status(500).send({ error: "Failed to fetch assets." });
+      }
+    });
+    
+
     // Get Assets using _id data
     app.get("/assets/:id", async (req, res) => {
       const id = req.params.id;
@@ -455,6 +482,8 @@ async function run() {
       }
       res.send(result);
     });
+
+    // Get HR most requested asset
 
     // Update Requested Asset
     app.patch("/requested-asset/:id", async (req, res) => {
