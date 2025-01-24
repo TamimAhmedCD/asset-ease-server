@@ -42,13 +42,31 @@ async function run() {
       .collection("requested_Assets");
 
     //! jwt related API
-    app.post("jwt", async (req, res) => {
+
+    // post token
+    app.post("/jwt", async (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "1h",
       });
       res.send({ token });
     });
+
+    // middleware
+    const verifyToken = (req, res, next) =>{
+      console.log("inside verify token",req.headers.authorization);
+      if(!req.headers.authorization) {
+        return res.status(401).send({message: 'forbidden access'})
+      }
+      const token = req.headers.authorization.split(' ')[1]
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if(err) {
+          return res.status(401).send({message: 'forbidden access'})
+        }
+        req.decoded = decoded
+        next()
+      })
+    }
 
     //! HR Account Related API
 
@@ -93,7 +111,7 @@ async function run() {
     });
 
     // Get Employee data using hr_email
-    app.get("/employee-accounts/:email", async (req, res) => {
+    app.get("/employee-accounts/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       // Query to fetch only employees with employee_status: false
       const query = { hr_email: email };
