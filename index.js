@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const app = express();
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -24,7 +24,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     //! HR Collection
     const hrAccountCollection = client.db("AssetEase").collection("hr_account");
@@ -574,25 +574,26 @@ async function run() {
     // });
 
     //! payment intent
-    app.post('/create-payment-intent', async (req, res) => {
-      const {price} = req.body
-      const amount = parseInt(price * 100);
+    // app.post('/create-payment-intent', async (req, res) => {
+    //   const {price} = req.body
+    //   const amount = parseInt(price * 100);
+    //   console.log(amount, 'amount the inside the client');
 
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
-        currency: "usd",
-        payment_method_types: ['card']
-      })
-      res.send({
-        clientSecret: paymentIntent.client_secret
-      })
-    })
+    //   const paymentIntent = await stripe.paymentIntents.create({
+    //     amount: amount,
+    //     currency: "usd",
+    //     payment_method_types: ['card']
+    //   })
+    //   res.send({
+    //     clientSecret: paymentIntent.client_secret
+    //   })
+    // })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
