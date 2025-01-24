@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const jwt = require ('jsonwebtoken')
+const jwt = require("jsonwebtoken");
 const app = express();
 require("dotenv").config();
 const port = process.env.PORT || 5000;
@@ -40,6 +40,15 @@ async function run() {
     const requestedAssetsCollection = client
       .db("AssetEase")
       .collection("requested_Assets");
+
+    //! jwt related API
+    app.post("jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
 
     //! HR Account Related API
 
@@ -225,21 +234,21 @@ async function run() {
     // Get Assets sort by request_count an max 5
     app.get("/assets/request-count", async (req, res) => {
       const { limit, sort } = req.query;
-    
+
       // Parse limit into a number, default to 5 if not provided
       const maxItems = limit ? parseInt(limit) : 5;
-    
+
       // Determine sorting order, default to descending (-1) on `request_count`
       const sortOrder = sort === "asc" ? 1 : -1; // Default to "desc"
-    
+
       try {
         // Fetch and sort assets based on request_count
         const result = await assetsCollection
-          .find()                      // No filter applied
+          .find() // No filter applied
           .sort({ request_count: sortOrder }) // Sort dynamically by query
-          .limit(maxItems)             // Limit results to `maxItems`
+          .limit(maxItems) // Limit results to `maxItems`
           .toArray();
-    
+
         res.send(result);
       } catch (error) {
         // Handle errors gracefully
@@ -247,7 +256,6 @@ async function run() {
         res.status(500).send({ error: "Failed to fetch assets." });
       }
     });
-    
 
     // Get Assets using _id data
     app.get("/assets/:id", async (req, res) => {
