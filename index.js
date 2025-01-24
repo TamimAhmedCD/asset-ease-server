@@ -56,22 +56,34 @@ async function run() {
     const verifyToken = (req, res, next) =>{
       console.log("inside verify token",req.headers.authorization);
       if(!req.headers.authorization) {
-        return res.status(401).send({message: 'forbidden access'})
+        return res.status(401).send({message: 'unauthorized access'})
       }
       const token = req.headers.authorization.split(' ')[1]
       jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if(err) {
-          return res.status(401).send({message: 'forbidden access'})
+          return res.status(401).send({message: 'unauthorized access'})
         }
         req.decoded = decoded
         next()
       })
     }
 
+    // use verify admin after verify token
+    const verifyHR = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = {email: email}
+      const user = await hrAccountCollection.findOne(query)
+      const isHR = user?.role === "HR"
+      if(!isHR) {
+        return res.status(403).send({message: 'forbidden access'})
+      }
+      next()
+    }
+
     //! HR Account Related API
 
     // Get HR data using HR email
-    app.get("/hr-account/:email", async (req, res) => {
+    app.get("/hr-account/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await hrAccountCollection.findOne(query);
@@ -111,7 +123,7 @@ async function run() {
     });
 
     // Get Employee data using hr_email
-    app.get("/employee-accounts/:email", verifyToken, async (req, res) => {
+    app.get("/employee-accounts/:email", async (req, res) => {
       const email = req.params.email;
       // Query to fetch only employees with employee_status: false
       const query = { hr_email: email };
@@ -134,7 +146,7 @@ async function run() {
     });
 
     // Patch Employee data
-    app.patch("/employee-account/:id", async (req, res) => {
+    app.patch("/employee-account/:id", verifyToken, verifyHR, async (req, res) => {
       const id = req.params.id; // Extract the ID from the URL
       const updateData = req.body; // Data to update
 
@@ -163,7 +175,7 @@ async function run() {
     });
 
     //! Get all Users account
-    app.get("/user", async (req, res) => {
+    app.get("/user", verifyToken, async (req, res) => {
       try {
         // Fetch data from both collections in parallel
         const [hrData, employeeData] = await Promise.all([
@@ -187,7 +199,7 @@ async function run() {
     //! Assets Related APi
 
     // Post Assets data
-    app.post("/assets", async (req, res) => {
+    app.post("/assets", verifyToken, verifyHR, async (req, res) => {
       const asset = req.body;
       const result = await assetsCollection.insertOne(asset);
       res.send(result);
@@ -205,7 +217,7 @@ async function run() {
     });
 
     // Delete Asset
-    app.delete("/assets/:id", async (req, res) => {
+    app.delete("/assets/:id", verifyToken, verifyHR, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await assetsCollection.deleteOne(query);
@@ -250,7 +262,7 @@ async function run() {
     });
 
     // Get Assets sort by request_count an max 5
-    app.get("/assets/request-count", async (req, res) => {
+    app.get("/assets/request-count", verifyToken, verifyHR, async (req, res) => {
       const { limit, sort } = req.query;
 
       // Parse limit into a number, default to 5 if not provided
@@ -286,7 +298,7 @@ async function run() {
     //! Requested Asset API
 
     // Post Requested Asset
-    app.post("/requested-asset", async (req, res) => {
+    app.post("/requested-asset", verifyToken, async (req, res) => {
       const asset = req.body;
       const result = await requestedAssetsCollection.insertOne(asset);
 
@@ -323,7 +335,7 @@ async function run() {
     });
 
     // Get requested asset using email, search, status filter, and asset_type filter
-    app.get("/requested-asset", async (req, res) => {
+    app.get("/requested-asset", verifyToken, async (req, res) => {
       const email = req.query.email;
       const searchQuery = req.query.search || ""; // Search query parameter for asset name
       const status = req.query.status; // Status filter parameter
@@ -380,7 +392,7 @@ async function run() {
     });
 
     // Get requested assets data using email and filter data by status: Pending
-    app.get("/requested-asset/pending", async (req, res) => {
+    app.get("/requested-asset/pending", verifyToken, async (req, res) => {
       const email = req.query.email;
       const query = { requester_email: email, status: "Pending" };
 
@@ -397,7 +409,7 @@ async function run() {
     });
 
     // Get request asset use request this month
-    app.get("/requested-asset/monthly", async (req, res) => {
+    app.get("/requested-asset/monthly", verifyToken, async (req, res) => {
       const email = req.query.email;
 
       // Define the start and end of the current month
@@ -440,7 +452,7 @@ async function run() {
     });
 
     // Get Requested Asset
-    app.get("/requested-assets", async (req, res) => {
+    app.get("/requested-assets", verifyToken, verifyHR, async (req, res) => {
       const email = req.query.email; // HR email
       if (!email) {
         return res.status(400).send("HR email is required");
@@ -489,7 +501,7 @@ async function run() {
     });
 
     // HR Pending requested asset
-    app.get("/requested-assets/pending", async (req, res) => {
+    app.get("/requested-assets/pending", verifyToken, verifyHR, async (req, res) => {
       const email = req.query.email; // HR email
       const query = { hr_email: email, status: "Pending" };
 
@@ -513,7 +525,7 @@ async function run() {
     // Get HR most requested asset
 
     // Update Requested Asset
-    app.patch("/requested-asset/:id", async (req, res) => {
+    app.patch("/requested-asset/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const updateStatus = req.body;
 
