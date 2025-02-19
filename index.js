@@ -160,7 +160,7 @@ async function run() {
       res.send(result);
     });
 
-    //! Get all account by email and find only role
+    // ! Get all account by email and find only role
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
 
